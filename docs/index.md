@@ -11,9 +11,9 @@ hero:
       link: /guide/
     - theme: alt
       text: Github
-      link: https://github.com/web-infra-dev/rspress
+      link: https://www.baidu.com
   image:
-    src: /rspress-icon.png
+    src: /doc/rspress-icon.png
     alt: Rspress Logo
 features:
   - title: Blazing fast build speed
