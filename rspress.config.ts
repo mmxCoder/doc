@@ -1,6 +1,8 @@
 import * as path from "path";
 import { defineConfig } from "rspress/config";
 
+const basePath: string = "/doc/";
+
 export default defineConfig({
   root: path.join(__dirname, "docs"),
   title: "Rspress",
@@ -21,7 +23,8 @@ export default defineConfig({
   },
   builderConfig: {
     output: {
-      assetPrefix: "/doc",
+      assetPrefix: basePath,
     },
   },
+  base: basePath,
 });

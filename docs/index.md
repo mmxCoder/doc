@@ -13,7 +13,7 @@ hero:
       text: Github
       link: https://www.baidu.com
   image:
-    src: /doc/rspress-icon.png
+    src: /rspress-icon.png
     alt: Rspress Logo
 features:
   - title: Blazing fast build speed
