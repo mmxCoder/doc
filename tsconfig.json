@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "paths": {
+      "@comp/*": ["./docs/components/*"],
+      "@views/*": ["./docs/views/*"],
+      "@style": ["./docs/styles/index.module.scss"],
+    }
   },
   "mdx": {
     "checkMdx": true

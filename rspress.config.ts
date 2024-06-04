@@ -20,7 +20,76 @@ export default defineConfig({
         content: "https://github.com/mmxCoder",
       },
     ],
-    nav: [],
+    nav: [
+      {
+        text: "开始",
+        link: "/views/study",
+      },
+    ],
+    sidebar: {
+      "/views/": [
+        {
+          text: "学习",
+          items: [
+            {
+              text: "初试",
+              link: "/views/study",
+            },
+          ],
+          collapsed: true,
+        },
+        {
+          text: "封装",
+          items: [
+            {
+              text: "初试",
+              link: "/views/encapsulation",
+            },
+          ],
+          collapsed: true,
+        },
+        {
+          text: "心得",
+          items: [
+            {
+              text: "初试",
+              link: "/views/experience",
+            },
+          ],
+          collapsed: true,
+        },
+        {
+          text: "笔记",
+          items: [
+            {
+              text: "初试",
+              link: "/views/note",
+            },
+          ],
+          collapsed: true,
+        },
+        {
+          text: "感悟",
+          items: [
+            {
+              text: "初试",
+              link: "/views/reflection",
+            },
+          ],
+          collapsed: true,
+        },
+        {
+          text: "思考",
+          items: [
+            {
+              text: "初试",
+              link: "/views/think",
+            },
+          ],
+          collapsed: true,
+        },
+      ],
+    },
   },
   builderConfig: {
     output: {

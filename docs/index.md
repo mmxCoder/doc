@@ -4,11 +4,11 @@ pageType: home
 hero:
   name: MMX
   text: 分享自己的心得
-  tagline: 点击快递开始
+  tagline: 点击快速开始
   actions:
     - theme: brand
-      text: 快递开始
-      link: /guide/
+      text: 快速开始
+      link: /views/study
     - theme: alt
       text: Github
       link: https://github.com/mmxCoder
