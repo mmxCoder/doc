@@ -13,6 +13,8 @@ function pushCode() {
   process.execSync("git add .", options);
   process.execSync(`git commit -m "feat: auto push code"`, options);
   process.execSync("git push", options);
+
+  console.log("代码推送成功");
 }
 
 pushCode();
