@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "rspress dev",
     "build": "rspress build",
-    "preview": "rspress preview"
+    "preview": "rspress preview",
+    "push": "node ./script/push.js"
   },
   "dependencies": {
-    "rspress": "^1.22.0"
+    "rspress": "^1.22.0",
+    "shell": "^0.5.1"
   },
   "devDependencies": {
     "@types/node": "^16"

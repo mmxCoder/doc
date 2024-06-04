@@ -5,21 +5,22 @@ const basePath: string = "/doc/";
 
 export default defineConfig({
   root: path.join(__dirname, "docs"),
-  title: "Rspress",
-  description: "Rspack-based Static Site Generator",
-  icon: "/rspress-icon.png",
+  title: "MMX",
+  description: "MMX study",
+  icon: "/logo.png",
   logo: {
-    light: "/rspress-light-logo.png",
-    dark: "/rspress-dark-logo.png",
+    light: "/logo.png",
+    dark: "/logo.png",
   },
   themeConfig: {
     socialLinks: [
       {
         icon: "github",
         mode: "link",
-        content: "https://github.com/web-infra-dev/rspress",
+        content: "https://github.com/mmxCoder",
       },
     ],
+    nav: [],
   },
   builderConfig: {
     output: {
