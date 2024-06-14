@@ -59,16 +59,16 @@ export default defineConfig({
         //   ],
         //   collapsed: true,
         // },
-        // {
-        //   text: "笔记",
-        //   items: [
-        //     {
-        //       text: "初试",
-        //       link: "/views/note",
-        //     },
-        //   ],
-        //   collapsed: true,
-        // },
+        {
+          text: "笔记",
+          items: [
+            {
+              text: "vxe-table源码调试",
+              link: "/views/note/vxeTable",
+            },
+          ],
+          collapsed: false,
+        },
         // {
         //   text: "感悟",
         //   items: [
@@ -85,6 +85,10 @@ export default defineConfig({
             {
               text: "多个hook之间如何解耦",
               link: "/views/think/hook",
+            },
+            {
+              text: "如何等待多个异步任务",
+              link: "/views/think/asyncAwait",
             },
           ],
           collapsed: false,
