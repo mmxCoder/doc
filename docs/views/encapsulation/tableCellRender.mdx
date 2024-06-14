@@ -363,11 +363,18 @@ function RenderTable() {
       ]
     },
     {
-      dataIndex: 'name',
+      dataIndex: 'test1',
       title: '测试列2',
       cellRenderConfig: [
         'tag',
-        'copy',
+      ]
+    },
+    {
+      dataIndex: 'test2',
+      title: '测试列组合形式渲染',
+      cellRenderConfig: [
+        'tag',
+        'copy'
       ]
     }
   ]
@@ -375,7 +382,8 @@ function RenderTable() {
   const data = [
     {
       test: '测试数据',
-      name: '测试名称',
+      test1: '测试数据1',
+      test2: '测试数据2',
       id: 1,
     }
   ]

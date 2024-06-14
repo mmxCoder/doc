@@ -24,21 +24,21 @@ export default defineConfig({
     nav: [
       {
         text: "开始",
-        link: "/views/study",
+        link: "/views/encapsulation/tableCellRender",
       },
     ],
     sidebar: {
       "/views/": [
-        {
-          text: "学习",
-          items: [
-            {
-              text: "初试",
-              link: "/views/study",
-            },
-          ],
-          collapsed: true,
-        },
+        // {
+        //   text: "学习",
+        //   items: [
+        //     {
+        //       text: "初试",
+        //       link: "/views/study",
+        //     },
+        //   ],
+        //   collapsed: true,
+        // },
         {
           text: "封装",
           items: [
@@ -47,47 +47,47 @@ export default defineConfig({
               link: "/views/encapsulation/tableCellRender",
             },
           ],
-          collapsed: true,
+          collapsed: false,
         },
+        // {
+        //   text: "心得",
+        //   items: [
+        //     {
+        //       text: "初试",
+        //       link: "/views/experience",
+        //     },
+        //   ],
+        //   collapsed: true,
+        // },
+        // {
+        //   text: "笔记",
+        //   items: [
+        //     {
+        //       text: "初试",
+        //       link: "/views/note",
+        //     },
+        //   ],
+        //   collapsed: true,
+        // },
+        // {
+        //   text: "感悟",
+        //   items: [
+        //     {
+        //       text: "初试",
+        //       link: "/views/reflection",
+        //     },
+        //   ],
+        //   collapsed: true,
+        // },
         {
-          text: "心得",
+          text: "思考(未解决问题)",
           items: [
             {
-              text: "初试",
-              link: "/views/experience",
+              text: "多个hook之间如何解耦",
+              link: "/views/think/hook",
             },
           ],
-          collapsed: true,
-        },
-        {
-          text: "笔记",
-          items: [
-            {
-              text: "初试",
-              link: "/views/note",
-            },
-          ],
-          collapsed: true,
-        },
-        {
-          text: "感悟",
-          items: [
-            {
-              text: "初试",
-              link: "/views/reflection",
-            },
-          ],
-          collapsed: true,
-        },
-        {
-          text: "思考",
-          items: [
-            {
-              text: "初试",
-              link: "/views/think",
-            },
-          ],
-          collapsed: true,
+          collapsed: false,
         },
       ],
     },

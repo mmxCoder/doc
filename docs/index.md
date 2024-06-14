@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /views/study
+      link: /views/encapsulation/tableCellRender
     - theme: alt
       text: Github
       link: https://github.com/mmxCoder
