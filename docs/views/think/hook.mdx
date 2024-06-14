@@ -1,4 +1,65 @@
 # 思考: 多个hook之间的耦合度应该如何解耦
 
-| 现在 **`函数式编程`** 是前端开发中的主流思想, **`hook`** 也作为主流的思想被越来越多人所实践并推行.
-| 但在实践开发中, 总会遇到一种情况, 就是 多个hook 之间的相互依赖.
+> 现在 **`函数式编程`** 是前端开发中的主流思想, **`hook`** 也作为主流的思想被越来越多人所实践并推行.  
+> 但在实践开发中, 总会遇到一种情况, 就是 多个hook 之间的相互依赖.
+
+```jsx pure
+
+import { useState, useMemo } from 'react'
+
+function useHookA() {
+    const [ count, setCount ] = useState(1)
+
+    const addCount = () => {
+        setCount(count + 1)
+    }
+
+    return {
+        count,
+        addCount
+    }
+}
+
+function useHookB({ count }) {
+    const computeCount = useMemo(() => {
+        console.log('重新计算....', count)
+        return count * 2
+    }, [count])
+
+    return {
+        computeCount
+    }
+}
+
+
+export default function Demo() {
+
+  const { count, addCount } = useHookA()
+
+  const { computeCount } = useHookB({ count })
+
+    return (
+        <>
+        <div>{ count }</div>
+        <div>{ computeCount }</div>
+        <button onClick={addCount}>+1</button>
+        </>
+    )
+}
+
+
+```
+
+按上面的例子, useHookB 依赖了 useHookA 的一个状态.这还是一个最简单的一种情况, 实际情况中可能更加复杂.  
+可能存在多个 hook 相互依赖等情况.
+
+:::tip 思考
+
+应该如何去解耦这中间的耦合?
+
+
+有兴趣可以看看下面这个解决方案: vue3 + IOC
+
+https://zova.js.org/zh/guide/start/why.html
+
+:::
