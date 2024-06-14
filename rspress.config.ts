@@ -1,5 +1,6 @@
 import * as path from "path";
 import { defineConfig } from "rspress/config";
+import { pluginPreview } from "@rspress/plugin-preview";
 
 const basePath: string = "/doc/";
 
@@ -42,8 +43,8 @@ export default defineConfig({
           text: "封装",
           items: [
             {
-              text: "初试",
-              link: "/views/encapsulation",
+              text: "配置式单元格渲染",
+              link: "/views/encapsulation/tableCellRender",
             },
           ],
           collapsed: true,
@@ -97,4 +98,5 @@ export default defineConfig({
     },
   },
   base: basePath,
+  plugins: [pluginPreview()],
 });

@@ -9,10 +9,12 @@
     "push": "node ./script/push.js"
   },
   "dependencies": {
+    "antd": "^5.18.0",
     "rspress": "^1.22.0",
     "shell": "^0.5.1"
   },
   "devDependencies": {
+    "@rspress/plugin-preview": "^1.23.0",
     "@types/node": "^16"
   }
 }
