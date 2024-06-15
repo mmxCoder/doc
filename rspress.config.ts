@@ -70,6 +70,10 @@ export default defineConfig({
               text: "vxe-table源码调试",
               link: "/views/note/vxeTable",
             },
+            {
+              text: "任务并发控制",
+              link: "/views/note/requestControl",
+            },
           ],
           collapsed: false,
         },
@@ -96,6 +100,16 @@ export default defineConfig({
             },
           ],
           collapsed: false,
+        },
+        {
+          text: "补充知识",
+          collapsed: false,
+          items: [
+            {
+              text: "浏览器并发限制的原因",
+              link: "/views/expand/browserConcurrency",
+            },
+          ],
         },
       ],
     },
