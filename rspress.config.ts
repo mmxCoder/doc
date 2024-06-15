@@ -26,6 +26,10 @@ export default defineConfig({
         text: "开始",
         link: "/views/encapsulation/tableCellRender",
       },
+      {
+        text: "联系我",
+        link: "/views/contact/me",
+      },
     ],
     sidebar: {
       "/views/": [
