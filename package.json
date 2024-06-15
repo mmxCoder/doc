@@ -6,7 +6,8 @@
     "dev": "rspress dev",
     "build": "rspress build",
     "preview": "rspress preview",
-    "push": "node ./script/push.js"
+    "push": "node ./script/push.js",
+    "start": "npm run dev"
   },
   "dependencies": {
     "antd": "^5.18.0",

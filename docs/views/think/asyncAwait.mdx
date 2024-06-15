@@ -1,3 +1,6 @@
+import img1 from '../../assets/asyncAwait1.png'
+import img2 from '../../assets/asyncAwait2.png'
+
 # 如何等待分散在不同的模块内部的多个异步结束?
 
 ## 场景
@@ -7,7 +10,7 @@
 
 ## 示例
 
-<img src="/asyncAwait1.png" />
+<img src={img1} />
 
 > 上面是一个最简单的示例复现.  
 > 想象一下, 顶部的三个状态都是异步请求回来的, 并且有可能这三个是分布在 **`不同`** 的组件内部,  
@@ -22,7 +25,7 @@
 
 ## 目前的解决方案
 
-<img src="/asyncAwait2.png" />
+<img src={img2} />
 
 :::warning 问题
 

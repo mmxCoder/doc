@@ -1,3 +1,8 @@
+import img1 from '../../assets/vxetable1.png';
+import img2 from '../../assets/vxetable2.png';
+import img3 from '../../assets/vxetable3.png';
+import img4 from '../../assets/vxetable4.png';
+
 # 记录一次调试vxeTable源码
 
 :::tip 提示
@@ -42,7 +47,7 @@ const config = [
 ### 打开chorme性能面板分析
 
 
-<img src="/vxetable1.png" />  
+<img src={img1} />  
 
 :::tip 结果
 
@@ -60,7 +65,7 @@ const config = [
 
 ### 控制台打印节点个数
 
-<img src="/vxetable2.png" />
+<img src={img2} />
 
 :::tip 结果
 
@@ -94,7 +99,7 @@ const config = [
 
 #### 继续控制台打印节点个数.
 
-<img src='/vxetable3.png' />
+<img src={img3} />
 
 :::info 结果
 
@@ -135,7 +140,7 @@ const config = [
 
 > 终于在一通打印调试之后, 在源码里面发现了问题.
 
-<img src="/vxetable4.png" />
+<img src={img4} />
 
 :::tip 结果
 
