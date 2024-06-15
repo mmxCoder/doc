@@ -13,3 +13,72 @@
 ## 自己实现任务池限制
 
 > 在前端代码上, 我们要实现的就不仅仅是请求层面的控制, 而是针对所有情况, 应该是说 **`Task(任务)`** , 任何一个函数都可以称为一个任务.  
+
+### 设计基本架构
+
+```js pure
+
+class TaskPool {
+    constructor() {}
+    // 添加任务
+    addTask() {}
+    // 开始执行任务
+    execTask() {}
+}
+
+const task = new TaskPool()
+
+task.addTask(() => {
+    const date = Date.now()
+    // 同步阻塞3秒
+    while (Data.now() - date > 3000) {}
+    console.log('任务一执行结束.')
+})
+task.addTask(() => {
+    // 异步等待3秒
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(true)
+            console.log('任务二执行结束')
+        }, 3000);
+    })
+})
+
+task.execTask()
+
+```
+
+#### 开始实现 addTask 函数
+
+> 这个函数很简单, 就执行把任务函数推进队列就可以了.
+
+```js pure
+
+class TaskPool {
+    constructor() {
+        // 保存任务队列
+        this.taskList = []
+    }
+    // 添加任务
+    addTask(task) {
+        this.taskList.push(task)
+    }
+}
+
+```
+
+#### 开始实现 execTask 函数
+
+> 这个函数就麻烦一点, 这个控制逻辑都在这里执行.
+
+```js pure
+
+// 这个函数接受一个参数 count. 表示可以任务池同时最多执行多少个任务.
+execTask({ count }) {
+
+    // 如果任务队列为空, 则不执行.
+    if (!this.taskList.length) return;
+
+}
+
+```
