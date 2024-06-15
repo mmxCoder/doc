@@ -79,6 +79,26 @@ execTask({ count }) {
     // 如果任务队列为空, 则不执行.
     if (!this.taskList.length) return;
 
+    // 保存所有任务
+    const allTask = []
+    // 保存正在执行的任务
+    const executing = []
+
+    for (const task of this.taskList) {
+       // 包装成promise, 兼容同步/异步任务
+       const p = Promise.resolve().then(() => task())
+       allTask.push(p)
+
+      if (executing.length <= count) {
+        const e = p.then(() => { executing.splice(e, 1) })
+        executing.push(e)
+      }
+
+
+    }
+
 }
+
+https://juejin.cn/post/6997766000879861796?from=search-suggest
 
 ```
