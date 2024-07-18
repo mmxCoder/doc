@@ -352,4 +352,29 @@ const openModal = () => {
 
 ```
 
-在上面的代码中, model.tsx 的 onCancel
+在上面的代码中, model.tsx 的 openModal **`并不能`** 获取到调用方在 .then 方法中 return 的东西  
+
+一个可行的方式是 **`不直接返回 promise, 而是返回一个类Promise对象, 即包含then/catch/finally 方法的对象`**  
+
+```tsx pure
+
+// 这里只做最简单的代码思路, 没做代码组织.
+
+let thenCallback = null
+
+const openModal = () => {
+    const p = new Promise(resolve => {})
+
+    p.then(res => {
+        // 这里就可以拿到调用方 .then 方法返回的值
+        const result = thenCallback(res)
+    })
+
+    return {
+        then(callback) {
+            thenCallback = callback
+        },
+    }
+}
+
+```
