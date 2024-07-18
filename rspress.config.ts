@@ -71,9 +71,13 @@ export default defineConfig({
               link: "/views/note/vxeTable",
             },
             {
-              text: "任务并发控制",
-              link: "/views/note/requestControl",
+              text: "弹窗/抽屉的命令式打开",
+              link: "/views/note/opendialog",
             },
+            // {
+            //   text: "任务并发控制",
+            //   link: "/views/note/requestControl",
+            // },
           ],
           collapsed: false,
         },

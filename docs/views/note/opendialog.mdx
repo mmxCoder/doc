@@ -1,0 +1,355 @@
+import { Tag } from 'antd'
+
+# 命令式的打开弹窗/抽屉
+
+> 在web开发中, 一个很常见的场景就是使用 弹窗/抽屉.  
+> 现在常用的ui组件库的使用方法一般是通过 <Tag color='red'>状态</Tag> 去控制组件的打开/关闭.  
+> 再通过一个事件去实现点击 <Tag color='green'>确定</Tag> 的逻辑.  
+> 但这里就存在一个问题, 即 <Tag color='orange'>这两个行为的分离</Tag>
+
+
+## 一个简单的案例
+
+```tsx pure
+
+import { useState } from 'react'
+
+function Demo() {
+    // 打开/关闭
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    // 点击确定了...
+    const handleOk = () => {}
+
+    return (
+        <>
+            <button onClick={() => { setIsModalOpen(true) }}>打开弹窗</button>
+            <Modal title="Basic Modal" open={isModalOpen} onOk={handleOk} >
+                <p>Some contents...</p>
+            </Modal>
+        </>
+    )
+}
+
+```
+
+:::tip 提示
+
+请看上面的代码, 可以发现实际上 **`打开`** 和 **`确定`**, 这两个行为是分离的.
+
+:::
+
+## 实际问题
+
+> 一个非常常见的问题是在表格中做编辑.  
+> 以一个简单的例子(可能这个例子不太恰当, 但能说明问题)
+
+```tsx
+
+import { useState } from 'react'
+import { Table, Button, Modal, Select } from 'antd'
+
+function Demo() {
+
+    function useModal() {
+        const [visible, setVisible] = useState(false)
+
+        const open = (status = true, rowData) => {
+            setVisible(status)
+        }
+
+        return {
+            visible,
+            open,
+        }
+    }
+
+    function useTable({ open }) {
+        const dataSource = [
+            {
+                key: '1',
+                status: 1,
+            },
+            {
+                key: '2',
+                status: 0
+            },
+        ];
+
+        const columns = [
+            {
+                title: 'id',
+                dataIndex: 'key',
+            },
+            {
+                title: '状态',
+                dataIndex: 'status',
+                render(row) {
+                    return row.status === 1 ? '启用' : '禁用' 
+                }
+            },
+            {
+                title: '编辑',
+                render(row) {
+                    return <Button onClick={ () => open(true, row) }>编辑数据</Button>
+                }
+            }
+        ];
+
+        return {
+            dataSource,
+            columns
+        }
+    }
+
+    const { visible, open } = useModal()
+    const { dataSource, columns } = useTable({ open })
+    
+    
+
+    return (
+        <>
+            <Table dataSource={dataSource} columns={columns} />
+            <Modal open={ visible } onCancel={ () => open(false) } onOk={ () => open(false) }>
+                <Select
+                    style={{ width: 100 }}
+                    options={[
+                        { value: 1, label: '启用' },
+                        { value: 0, label: '禁用' },
+                    ]}
+                />
+            </Modal>
+        </>
+    )
+}
+
+export default Demo;
+
+```
+
+### 问题分析
+
+请聚焦于点击 <Tag color='red'>编辑数据</Tag> 这个动作上.  
+这个动作需要做的事情  
+1. 设置弹窗的状态, 将弹窗打开.  
+2. 将数据保存并传递到弹窗内部.  
+3. 监听弹窗的 <Tag>确定事件</Tag> , 执行相关操作.  
+
+上面的操作其实没啥问题, 但实际上存在着 <Tag color='red'>逻辑分散</Tag> 的问题, 即同一个动作/行为的逻辑被分散到各个函数内部了, 无法内聚.  
+
+## 方案
+
+:::tip 提示
+
+这里只给出一个大概的思路, 没有给出完整的封装代码, 因为每个项目的需求是不一样的, 只做为思路参考.
+
+:::
+
+我的解决方法是使用 <Tag color='orange'>Promise</Tag> 来解决逻辑分散的问题.  
+
+直接上代码.  
+
+```tsx pure
+
+import { useRef, useState, forwardRef, useImperativeHandle } from 'react'
+import { Modal, Button } from 'antd'
+
+function _MyModal(props, ref) {
+
+    const [visible, setVisible] = useState(false)
+    // 保存promise的 resolve / reject 方法
+    const resolveFn = useRef()
+
+    // 弹窗关闭
+    const close = () => setVisible(false)
+
+    // 弹窗确定
+    const handleOk = () => {
+        // 点击确定时再调用 resolve 方法
+        resolveFn.current?.resolve?.()
+        close()
+    }
+
+    // 弹窗取消
+    const hanldeCancel = () => {
+        // 点击确定时再调用 reject 方法
+        resolveFn.current?.reject?.()
+        close()
+    }
+
+    // 打开弹窗
+    const openModal = (config = {}) => {
+        return new Promise((resolve, reject) => {
+            setVisible(true)
+            resolveFn.current = { resolve, reject };
+        })
+    }
+
+    // 暴露给调用方
+    useImperativeHandle(ref, () => ({
+        openModal,
+    }))
+
+    return (
+        <Modal open={ visible } onCancel={ hanldeCancel } onOk={ handleOk }>
+            {props.children}
+        </Modal>
+    )
+
+}
+
+
+```
+
+### 使用
+
+```tsx
+
+import { useRef, useState, forwardRef, useImperativeHandle } from 'react'
+import { Modal, Button } from 'antd'
+
+function _MyModal(props, ref) {
+
+    const [visible, setVisible] = useState(false)
+    // 保存promise的 resolve / reject 方法
+    const resolveFn = useRef()
+
+    // 弹窗关闭
+    const close = () => setVisible(false)
+
+    // 弹窗确定
+    const handleOk = () => {
+        resolveFn.current?.resolve?.()
+        close()
+    }
+
+    // 弹窗取消
+    const hanldeCancel = () => {
+        resolveFn.current?.reject?.()
+        close()
+    }
+
+    // 打开弹窗
+    const openModal = (config = {}) => {
+        return new Promise((resolve, reject) => {
+            setVisible(true)
+            resolveFn.current = { resolve, reject };
+        })
+    }
+
+    // 暴露给调用方
+    useImperativeHandle(ref, () => ({
+        openModal,
+    }))
+
+    return (
+        <Modal open={ visible } onCancel={ hanldeCancel } onOk={ handleOk }>
+            {props.children}
+        </Modal>
+    )
+
+}
+
+const MyModal = forwardRef(_MyModal)
+
+function Test() {
+
+    const modelRef = useRef()
+
+    const openModal = () => {
+        modelRef.current.openModal().then(() => {
+            alert('弹窗点击确定了....')
+        }).catch(() => {
+            alert('弹窗关闭了...')
+        })
+    }
+
+    return (
+        <>
+            <Button onClick={openModal}>打开弹窗</Button>
+            <MyModal ref={ modelRef }>
+                这是弹窗内容
+            </MyModal>
+        </>
+    )
+}
+
+export default Test
+
+```
+
+```tsx pure
+
+function Test() {
+
+    const modelRef = useRef()
+
+    const openModal = () => {
+        modelRef.current.openModal().then(() => {
+            alert('弹窗点击确定了....')
+        }).catch(() => {
+            alert('弹窗关闭了...')
+        })
+    }
+
+    return (
+        <>
+            <Button onClick={openModal}>打开弹窗</Button>
+            <MyModal ref={ modelRef }>
+                这是弹窗内容
+            </MyModal>
+        </>
+    )
+}
+
+```
+
+### 说明
+
+> 1. 上面的代码只是一个非常非常简略的代码, 思路也非常简单, 使用promise将两个分离的行为统一到一起.  
+> 2. 实际开发过程中还有非常多需要考虑的地方. 比如说
+>> 1. **`传递传递`**, 弹窗内部应该是暴露一个自由度非常高的配置项出来, 由调用方手动控制, 例如弹窗标题,宽度,底部渲染,弹窗数据等等...
+这些应该通过 <Tag color="blue-inverse">openModal</Tag> 方法传入(可以看到方法定义那里其实预留了一个config参数)
+>> 2. **`嵌套弹窗`**, 在开发过程中, 难免会生成多个弹窗相互嵌套的情况. 这种可以通过 <Tag color="blue-inverse">栈</Tag> 的形式去解决,
+每次打开时都将 promise 的 resolve/reject 方法入栈, 操作完之后出栈, 这样能保证当前顺序不会错乱.
+>> 3. **`阻止关闭`**, 在开发过程中, 很多场景下点击确定后需要 <Tag color="blue-inverse">发起请求</Tag>, 请求会存在失败的情况, 有时候想在
+失败时阻止弹窗关闭. 这时候应该怎么办?
+>> 4. **`多行为`**, 有时候, 其实弹窗的底部是自定义渲染的, 底部会存在非常多的情况, 单纯一个 .then 不足以区分多个按钮行为.
+(可以在 resolve 时暴露不同的字段去区分)
+
+### 其他
+
+针对上面提到的<Tag color="blue-inverse">第三点</Tag>问题, 站在调用方的角度, 应该是越简单越好, 所以一个可行的方案应该是在 .then 方法
+中按照逻辑 return false 或者 return Promise.reject() 这类的形式去阻止弹窗关闭, 类似于
+
+```tsx pure
+
+const openModal = () => {
+    modelRef.current.openModal().then(() => {
+        alert('弹窗点击确定了....')
+        // 按照自己的逻辑决定是否关闭弹窗.
+        return Math.random() > 0.5 ? Promise.resolve() : Promise.reject()
+    })
+}
+
+```
+
+但是如果想实现这种效果的话, 代码需要进行改造了.
+
+```tsx pure
+
+// model.tsx
+const openModal = () => {
+    return new Promise(resolve => {})
+}
+
+// demo.tsx
+const openModal = () => {
+    modelRef.current.openModal().then(() => {
+        return Math.random() > 0.5 ? Promise.resolve() : Promise.reject()
+    })
+}
+
+
+```
+
+在上面的代码中, model.tsx 的 onCancel
