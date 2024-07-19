@@ -1,0 +1,223 @@
+import { Tag } from 'antd'
+
+# 前端数据收集
+
+:::tip
+这里不做过多的代码展示, 因为代码实现上并无难度, 只做一些关键性内容记录  
+**`内容仅是我在项目中做到的东西, 可能并不完善`**  
+
+里面的一些代码是从项目中提取出来的, 会尽量改成通用代码, 如有疏忽, 可以联系我修改.
+:::
+
+## 请求
+
+在设计功能时 请求应作为 <Tag color="blue-inverse">核心模块</Tag> 去设计, 因为它比项目内的请求器可能需要多考虑一些东西.  
+比如:  
+1. 请求应该 **`无感`** , 即要忽略掉所有的报错信息, 有些项目会在拦截器内部做统一的 **`错误通知`** , 但这个不行, 因为要对用户无感.
+2. 合并请求, 因为业务层的可能会频繁去触发请求, 所以需要实现数据合并发送
+3. 最长时间发送, 当一个数据存在多长时间时就发送.
+4. 失败重试, 接口可能因网络/服务器不稳定等原因存在失败的可能, 所有需要实现失败时重试发送.
+5. 关闭时发送, 在页面关闭或者切换时需要将数据尽可能的发送.
+
+:::tip 关于第二点和第三点
+
+其实第二点和第三点的功能设计是相关的, 也就是说哪个条件先达到就先发送. 他们之间是 **`或者`** 的关系  
+
+比如: 数据条数达到 20 条 或者 10s 内发送数据.  
+那么, 在10s内如果超过了20条数据, 那应该直接发送.  
+如果超过10s还没到20条数据, 也应该直接发送.  
+
+:::
+
+:::tip 关于第五点
+
+应该使用 **`navigator.sendBeacon`** 这个api去发送数据.  
+这也是官方推荐的一种做法.
+
+(截止2024/7/19)当然这个方法会有一些限制, 比如:  
+1. 只能发送post请求
+2. 发送数据格式有限制(常用的有字符串/FormData)
+3. 无法自定义请求头.
+
+:::
+
+:::tip 关于接口
+这块功能的接口需要与后端协商, 让后端配合. 这个就不多说了.
+:::
+
+## 数据分类
+
+> 前端有多种数据类型可以上报.
+
+### 1. 日志
+
+#### 日志类型
+
+```tsx pure
+
+export type LogType = 'accets' | 'log' | 'error' | 'vue' | 'promise' | 'request';
+
+export type LogValue = {
+  content: string;
+};
+
+const logTypeMap: Record<LogType, LogValue> = {
+  // 全局监听 error 事件可以拿到. 但需要注意的是, 资源错误需要再捕获阶段才可以获取到.
+  // 即: window.addEventListener('error', () => {}, true)
+  accets: {
+    content: '资源加载失败日志',
+  },
+  // 封装时预留一个方法给调用方添加日志数据
+  log: {
+    content: '由调用方手动添加的日志',
+  },
+  // 全局监听 error 事件就可以了.
+  error: {
+    content: '语法错误等相关日志',
+  },
+  // vue本身提供了错误处理函数
+  // app.config.errorHandler = () => {}
+  vue: {
+    content: '由vue内部暴露的错误日志',
+  },
+  // 全局监听 unhandledrejection 事件
+  // 即: window.addEventListener('unhandledrejection', () => {}, true)
+  // 请注意, 该事件是 未捕获错误的promise 事件.
+  // 请求错误最好不要放到这里去添加, 因为请求有可能会被调用方 catch.
+  promise: {
+    content: '未捕获的promise日志',
+  },
+  // 主动在拦截器内部添加数据
+  request: {
+    content: '请求失败的日志',
+  },
+};
+
+```
+
+#### 上报内容
+
+```tsx pure
+
+export type StepNode = {
+  /** 节点路径 */
+  fullxpath: string;
+  /** 节点标签 */
+  tagname: string;
+  /** 
+   * 节点内容 
+   * 
+   * 这个地方可能需要注意一下.
+   * 本质上应该只获取到点击那一项的文本内容.
+   * 比如某个按钮, 就获取到按钮的文本内容.
+   * 
+   * 但是, 有些情况下点击的东西没有文本内容
+   * 一个例子就是菜单的点击了.
+   * div > div + icon 类似于这种的父子结构
+   * 有些时候用户点击了 icon, 这时候就拿不到点击的菜单名称了.
+   * 
+   * 所以这个地方的获取需要判断一下当前的节点是否存在内容, 不存在时网上找他的父节点,
+   * 直到某一层父节点的内容不为空
+   * 
+   * */
+  content: string;
+  /** 节点属性 */
+  attributes: Record<string, any>;
+};
+
+export interface LogDTO {
+  /** 时间戳 */
+  timestamp: number;
+  /** 日志内容, 字符串/json */
+  content: string | Record<string, any>;
+  /** 设备信息, 由内部生成 */
+  device: string;
+  /** 用户信息, 由内部生成 */
+  userInfo: Record<string, any>;
+  /** 日志类型 */
+  logType: LogType;
+  /** 日志类型描述 */
+  logTypeDesc: LogValue['content'];
+  /** 当前页面链接 */
+  pageLink: string;
+  /**
+   * 操作步骤
+   *
+   * 即在这一步日志之前, 界面点击了那些地方.
+   *
+   * 这里会记录20个步骤.
+   * 
+   * 这一步是为了方便复现.
+   * 
+   * 只需要监听 click 事件就能拿到点击的那个dom(dom里面就有很多的数据信息)
+   * 保存起来就可以了. 项目里面我是保存了20个.
+   * 这里需要注意的是, 最好是监听捕获阶段的click事件.
+   * 
+   * 即: window.addEventListener('click', () => {}, true)
+   * 
+   * 因为有些地方会阻止冒泡, 导致监听失效.
+   * 
+   * 还有一个问题是: 是否需要过滤重复节点, 因为有些情况是用户在某个地方连续点击了很多次, 这时候收集到的节点就是重复的.
+   * 这个问题的取舍自己斟酌.
+   *
+   */
+  step: StepNode[];
+  /** 备注 */
+  remark: string;
+}
+
+```
+
+### 2. 性能数据
+
+这里可以收集到前端的一些数据. 使用 **`window.performance`** 这个api可以获取到, 为了方便就直接贴代码了.
+
+```tsx pure
+
+const timing = window.performance.timing;
+
+const data = {
+    whiteScreen: {
+        time: timing.domLoading - timing.navigationStart,
+        label: '白屏时间',
+    },
+    redirect: {
+        time: timing.redirectEnd - timing.redirectStart,
+        label: '重定向耗时',
+    },
+    dom: {
+        time: timing.domComplete - timing.domLoading,
+        label: 'dom渲染耗时',
+    },
+    load: {
+        time: timing.loadEventEnd - timing.navigationStart,
+        label: '页面加载耗时',
+    },
+    unload: {
+        time: timing.unloadEventEnd - timing.unloadEventStart,
+        label: '页面卸载耗时',
+    },
+    request: {
+        time: timing.responseEnd - timing.requestStart,
+        label: '请求耗时',
+    },
+}
+
+```
+
+### 3. 资源数据
+
+这里是收集资源加载时间, 用于统计. 实际上也是使用 **`window.performance`** 这个api. 为了方便就直接贴代码了.
+
+```tsx pure
+
+const observer = new PerformanceObserver((assets) => {
+    // assets 是一个数组, 可能会存在多个.
+    // 自行处理上报.
+    // 这里有资源加载, 请求等相关数据.
+});
+
+// 监听资源.
+observer.observe({ entryTypes: ['resource'] });
+
+```

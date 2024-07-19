@@ -50,6 +50,10 @@ export default defineConfig({
               text: "配置式单元格渲染",
               link: "/views/encapsulation/tableCellRender",
             },
+            {
+              text: "弹窗/抽屉的命令式打开",
+              link: "/views/encapsulation/opendialog",
+            },
           ],
           collapsed: false,
         },
@@ -71,9 +75,10 @@ export default defineConfig({
               link: "/views/note/vxeTable",
             },
             {
-              text: "弹窗/抽屉的命令式打开",
-              link: "/views/note/opendialog",
+              text: "前端数据收集",
+              link: "/views/note/collect",
             },
+
             // {
             //   text: "任务并发控制",
             //   link: "/views/note/requestControl",
