@@ -1,0 +1,118 @@
+import { Tag } from 'antd'
+
+# 纯前端实现发版通知
+
+一个很常见的需求是前端发版后需要 **`通知还停留在页面的用户`** 及时去刷新页面.  
+
+## 方案
+
+> 下面介绍几个常见的方式
+
+### 方法一: 轮询后端接口获取版本信息
+
+由后端去维护版本信息, 前端只需要轮询接口, 就可以实现
+
+:::info 提示
+这种方法需要后端提供一个获取接口, 不断轮询.
+:::
+
+### 方法二: websocket / sse 获取版本信息
+
+与 **`方法一`** 一样, 同样由后端去维护版本信息, 前端只需要监听  
+不同的是, 不需要前端去轮询.
+
+:::info 提示
+
+虽然减少了轮询, 但这实际上跟 **`方法一`** 一样, 需要后端去维护这个信息. 实际上这对后端来说  
+其实是不需要的, 这个信息只是前端为了一个简单的通知.
+
+:::
+
+### 方法三: 纯前端实现
+
+实际上版本信息应该是可以由 <Tag color="blue-inverse" >前端保存</Tag> , 没必要放到后端去解决. 这里以 <Tag color="blue-inverse">Vite + vue3</Tag> 作为说明.  
+
+1. 首先在 <Tag color="cyan">public</Tag> 文件下新增一个文件保存版本信息, 如: version.json  
+
+```json
+
+// version.json
+// 文件可以放空, 或者一个空对象, 都可以.
+{}
+
+```
+
+2. 自动更新版本信息, 这里在vite打包时自动更新.
+
+```ts pure
+
+// vite.config.ts
+
+const fs = require('fs');
+const pathModule = require('path');
+
+// 更新版本信息
+// 当然实际上还需要判断环境变量.
+// 只有在生产环境时才更新文件.
+function updateVersion() {
+  
+  return {
+    name: 'updateVersion',
+    buildStart() {
+      // 版本文件路径
+      const path = pathModule.resolve(__dirname, './public/version.json');
+      // 内容
+      const versionContent = {
+        // 版本信息, 这里以时间戳为版本号.
+        version: Date.now(),
+        // 其他信息...
+        // 比如你可以在这里读取 git 提交记录, 提交信息等等~~
+        // node可以拿到很多东西, 自行通过项目需求增加.
+        // ....
+      }
+
+      // 写入文件.
+      fs.writeFile(path, JSON.stringify(versionContent))
+    }
+  }
+
+}
+
+// 在vite配置插件中加入该功能.
+{
+  plugins: [updateVersion()]
+}
+
+```
+
+3. 前端轮询上面的这个json文件
+
+> 这里就直接请求就可以了, 然后判断版本字段是否变大了, 是的话就是发布版本了.
+
+
+## 注意事项 / 说明 (针对方法三)
+
+1. 上面只展示了最基本的思路, 并且在实际项目中是可行的. 但如果应用到项目中, 需要自行完善和扩展该功能的细节.  
+2. 上面说的 <Tag color="cyan-inverse">version.json</Tag> 文件里面放的是一个 **`对象`** , 不是一个数组.
+因为我这边的项目使用了 **`cicd`** , 没办法使用数组保存多个发版记录.  
+
+:::tip 原因
+在打包服务器内每次都会拉取新代码去打包,
+这个文件在打包时被更新. 但是这个更新是在打包服务器上的, 并不是 git 仓库内的, 这就是说, 当下一次更新打包时, 还是
+第一次的那个记录, 第二次打包的记录没有被保存.  
+如果想解决的话, 可以先去请求线上的版本文件, 拿到最新的数据,
+但我这边没这个需求就没写了.
+:::
+
+3. 关于更新文件, 其实可以不用在 **`vite.config.ts`** 文件做, 也可以在 **`package.json`** 中做.
+
+```json
+
+{
+  "script": {
+    // 在执行 npm run build 命令之前先执行脚本.
+    "build": "node updateVersion.js & npm run build"
+  }
+}
+
+```

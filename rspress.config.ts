@@ -78,6 +78,10 @@ export default defineConfig({
               text: "前端数据收集",
               link: "/views/note/collect",
             },
+            {
+              text: "纯前端发版通知",
+              link: "/views/note/publish",
+            },
 
             // {
             //   text: "任务并发控制",
