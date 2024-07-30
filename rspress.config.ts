@@ -82,6 +82,10 @@ export default defineConfig({
               text: "纯前端发版通知",
               link: "/views/note/publish",
             },
+            {
+              text: "非覆盖式发布",
+              link: "/views/note/nonOverlayPublishing",
+            },
 
             // {
             //   text: "任务并发控制",
