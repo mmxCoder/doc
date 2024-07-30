@@ -1,0 +1,50 @@
+import png1 from '../../assets/npmPrivate1.png'
+import png2 from '../../assets/npmPrivate2.png'
+
+# 浅试npm私有仓库
+
+## 工具 Verdaccio
+
+> 这个工具已经把大多数功能就做好了, 基本上是开箱即用.
+
+## 用法
+
+**安装** :
+
+```js
+npm install -g verdaccio
+```
+
+**运行** :
+
+```js
+
+// 直接运行 verdaccio 命令就可以了.
+verdaccio
+```
+<img src={png1} />
+
+**看效果**
+
+> 打开 http://localhost:4873/  (这是默认端口, 可自行配置)
+
+<img src={png2} />
+
+**为项目设置源**
+
+> 在项目更目录运行: 
+
+```js
+npm set registry http://localhost:4873/ --location project
+```
+
+**发布包**
+
+```js
+npm publish --registry http://localhost:4873/
+```
+
+## 说明
+
+总的来说, 如果没有复杂的需求, 只想要一个私有仓库管理自己的包, 那么这个库直接开箱即用.  
+如果需要更多自定义配置, 请参考文档:  https://verdaccio.org/zh-CN/
