@@ -90,6 +90,10 @@ export default defineConfig({
               text: "浅试npm私有仓库",
               link: "/views/note/npmPrivate",
             },
+            {
+              text: "服务端通知",
+              link: "/views/note/serverNotify",
+            },
 
             // {
             //   text: "任务并发控制",

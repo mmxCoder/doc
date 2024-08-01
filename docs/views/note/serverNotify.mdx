@@ -1,0 +1,156 @@
+import { Tag } from 'antd'
+import png1 from '../../assets/servernotify1.png'
+import png2 from '../../assets/servernotify2.png'
+
+# 服务端通知
+
+:::tip 提示
+这里只做服务端主动通知的方案, 就不说明 <Tag color="red">轮询</Tag> 的方案了, 因为这个方案已经过时了. 
+:::
+
+## Server-Sent Events (SSE)
+
+> 这是一种在客户端和服务器之间实现单向事件流的机制，允许服务器主动向客户端发送事件数据。在 SSE 中，可以使用自定义事件（Custom Events）来发送具有特定类型的事件数据。
+
+### 实现
+
+#### 后端(nodejs)
+
+```js {2-3}
+app.get("/sse", (req, res) => {
+  // 只需要加上这一行就可以了.
+  res.setHeader("Content-Type", "text/event-stream");
+  res.status(200);
+
+  setInterval(() => {
+    // 这里是可以自定义事件
+    // 在这里 前端可以监听 hello 和 world 事件
+    res.write("event:" + (Math.random() > 0.5 ? "hello" : "world") + "\n");
+    res.write("data: " + new Date().getTime() + "\n\n");
+
+  }, 1000);
+});
+```
+
+##### 说明
+
+1. 发送给客户端的形式都是以 **`[field]: value`** 的形式编写的. 这里的 **`field`** 取值如下:
+```js
+
+[field]
+    event: 自定义事件
+    data: 数据源
+    id: 这是一个标识, 当发生错误断开链接时, 客户端会自动携带这个id发送到服务端.
+    retry: 指定浏览器重新发起连接的时间间隔.
+
+```
+
+请注意: 在一个事件内, 每次指定数据后都需要加上 **`\n`** 结尾. 最后一个使用 **\n\n** 结尾.
+
+2. 关于上面的 id 和 retry 字段, 如果你想看到实际效果, 可以这样.
+
+```js
+
+// node
+
+app.get("/sse", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.status(200);
+  // 设置id.
+  res.write('id: 111\n')
+  // 设置过期时间, 过期可能图片可能体现不出来, 可以自行尝试
+  // 会发现重连失败后500毫秒又会立即重连.
+  res.write("retry: 500\n");
+
+  res.write('data: 222\n\n')
+});
+
+```
+
+<img src={png1} />
+
+
+#### 前端
+
+```js {1}
+const sse = new EventSource('http://localhost:3001/sse')
+
+// 监听通用事件
+see.addEventListener('message', () => {})
+// 监听自定义事件
+sse.addEventListener('hello', () => {})
+// 监听错误事件
+sse.addEventListener('error', () => {})
+
+// 手动关闭连接
+sse.close()
+
+```
+
+##### 说明:
+
+1. 当发生错误断开链接时, sse会自动进行重连, 如果你想阻止重连, 可以这么做:
+
+```js
+
+sse.addEventListener('error', () => {
+    // TODO: 在某些情况下关闭该连接, 就不会重连了.
+    sse.close()
+})
+
+```
+
+### 案例地址
+
+> https://github.com/mmxCoder/demo/tree/main/sse
+
+## websocket
+
+> 这是一种双全工的协议, 与SSE不同的是, 客户端和服务端可以相互通信.
+
+:::tip 说明
+
+这里借助 **`ws`** 这个库来实现.
+
+:::
+
+### 实现
+
+#### 后端(nodejs)
+
+```js {3,6,9}
+const WebSocket = require("ws");
+
+const wss = new WebSocket.Server({ port: 3001 });
+
+wss.on("connection", (ws) => {
+  ws.on("message", (message) => {
+    console.log('接收到客户端消息,' + message);
+  });
+  ws.send("给客户端发送消息");
+});
+
+console.log("ws服务已启动, 端口号: 3001");
+
+```
+
+启动一个ws服务非常简单, 实际上就是两个动作(实际上前端也是如此), **`监听`** / **`发送`**
+
+#### 前端
+
+```js {2,8}
+const ws = new WebSocket('ws://localhost:3001')
+ws.addEventListener('message', (data) => {
+    console.log('接收到消息', data.data)
+})
+
+setTimeout(() => {
+    // 发送消息
+    ws.send(JSON.stringify({ name: 'MMX ' }))
+}, 1000)
+
+```
+
+#### 效果
+
+<img src={ png2 } />
