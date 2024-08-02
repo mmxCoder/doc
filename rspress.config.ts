@@ -94,6 +94,10 @@ export default defineConfig({
               text: "服务端通知",
               link: "/views/note/serverNotify",
             },
+            {
+              text: "大文件传输",
+              link: "/views/note/bigFileTransfer",
+            },
 
             // {
             //   text: "任务并发控制",

@@ -1,0 +1,218 @@
+import { Tag } from 'antd'
+import png1 from '../../assets/bigFile1.png'
+import png2 from '../../assets/bigFile2.png'
+import png3 from '../../assets/bigFile3.png'
+
+# 大文件传输
+
+## 分片上传
+
+### 背景
+
+前后端交互过程中, 有很多文件上传的场景, 这时候如果文件过大, 就会产生一个问题, 传输时间太多, 甚至可能出现 **`接口超时`** 的情况.
+
+### 实现流程
+
+#### 客户端
+
+<img src={png1} />
+
+#### 服务端
+
+<img src={png2} />
+
+:::tip 提示
+
+以上两张流程图片来自 **`掘金社区`** , 感谢!
+
+:::
+
+### 代码实现
+
+#### 客户端
+
+:::tip 提示
+
+选择文件 / 发送请求的封装这些步骤我就省略了, 不会全部写出来. **`只写关键的分片过程`** .  
+后面会放出测试代码地址, 可自行参考.  
+
+客户端这边的代码相对简单.
+
+:::
+
+```js
+
+// 计算文件 md5 的值
+// 里面拼接了当前的时间戳是为了进一步保证文件的唯一性
+// 这里使用到了 spark-md5 这个包.
+function computedMd5(file) {
+    const spark = new SparkMD5.ArrayBuffer();
+    spark.append(file);
+    const md5 = spark.end() + `_${Date.now()}`;
+    return md5;
+}
+
+
+// 处理切片
+function sliceFile(file) {
+    // 计算文件md5
+    const md5 = computedMd5(file)
+    // 每个部分的大小（1MB）
+    const chunkSize = 1024 * 1024 * 1;
+    // 总切片数, 这里需要向上取整
+    const totalChunks = Math.ceil(file.size / chunkSize);
+    // 当前切片
+    let currentChunk = 1;
+    // 保存切片的起始位置
+    let startByte = 0
+    // 记录上传成功的切片数(用于判断是否上传完毕)
+    let result = 1
+    // 分割文件为多个部分，并上传每个部分
+    while (startByte < file.size) {
+        // 计算切片的结束位置, 为了防止切片越界
+        const endByte = Math.min(startByte + chunkSize, file.size);
+        // 开始切片
+        const chunk = file.slice(startByte, endByte);
+
+        // 这里就是发送给后端的数据了.
+        const formData = new FormData();
+        formData.append('file', chunk, file.name);
+        formData.append('index', currentChunk - 1);
+        formData.append('totalChunks', totalChunks);
+        formData.append('hash', md5)
+
+        // ajax 为一个简单的请求函数, 可以在下面的源码地址中找到.
+        ajax({
+            url: 'http://localhost:3000/upload',
+            type: 'POST',
+            data: formData,
+            success: (res) => {
+                // 切片上传成功后调用合并接口
+                if (result++ === totalChunks) {
+                    ajax({
+                        url: 'http://localhost:3000/merge',
+                        type: 'POST',
+                        data: {
+                            hash: md5,
+                            totalChunks,
+                            fileName: file.name
+                        },
+                        success: (res) => {}
+                    })
+                }
+            }
+        })
+
+        startByte += chunkSize;
+        currentChunk++;
+    }
+}
+
+```
+
+#### 服务端
+
+:::tip 提示
+
+这里与上面的流程图可能有些许不一样, 但大致上都差不多.  
+
+下面的代码使用 **`express`** 框架编写.
+
+:::
+
+##### 这里先写下几个辅助函数
+
+```js
+
+// 这个函数是创建临时目录并将文件写入该目录下.
+const _savaFile = () => {
+  const map = {};
+
+  /* paths: 临时目录路径, fileName: 保存的文件名称, buffer: 保存的文件内容. */
+  return (paths, fileName, buffer) => {
+    map[paths] = false;
+
+    // 如果目录不存在则创建目录. 这里的map是为了减少 api 的调用
+    if (!map[paths] && !fs.existsSync(paths)) {
+      fs.mkdirSync(paths, { recursive: true });
+      map[paths] = true;
+    }
+
+    // 写入文件
+    fs.writeFileSync(path.join(paths, fileName), buffer);
+  };
+};
+
+const saveFile = _savaFile();
+
+
+```
+
+##### 接收分片接口
+
+```js
+
+const upload = multer();
+const saveFile = _savaFile();
+
+app.post("/upload", upload.single("file"), (req, res) => {
+  const { index, hash } = req.body;
+  
+  // 这里使用 hash 名称作为临时目录名, 所有分片都保存在里面.
+  const tempPath = path.join(__dirname, `uploads`, hash);
+
+  // 保存到临时目录
+  saveFile(tempPath, `chunk.part${index}`, req.file.buffer);
+
+  res.json({ message: "Chunk uploaded successfully" });
+});
+
+```
+
+##### 合并分片接口
+
+```js
+
+app.post("/merge", (req, res) => {
+  const { fileName, hash, totalChunks } = req.body;
+  // 拼接出临时目录路径
+  const tempPath = path.join(__dirname, "uploads", hash);
+  // 检测一下切片是否完整
+  readdir(tempPath).then((files) => {
+    if (files.length !== totalChunks) {
+      res.json({ message: "文件流不完整" });
+      return;
+    } else {
+      // 拼接出最终保存的文件路径和名称.
+      const targetPath = path.join(__dirname, "uploads", `${hash}.${fileName}`);
+      // 创建一个可读流
+      const writeStream = fs.createWriteStream(targetPath);
+
+      // 按顺序将内容写入最终的文件.
+      for (let i = 0; i < totalChunks; i++) {
+        const chunkPath = path.join(tempPath, `chunk.part${i}`);
+        const chunkBuffer = fs.readFileSync(chunkPath);
+        writeStream.write(chunkBuffer);
+      }
+
+      // 移除临时文件
+      fs.rm(tempPath, { recursive: true }, () => {});
+
+      // 完成.
+      writeStream.end();
+      res.json({ message: "File uploaded successfully" });
+    }
+  });
+});
+
+```
+
+#### 效果展示
+
+对于同一份文件(60MB)的上传效果, 如下图所示
+
+<img src={png3} />
+
+### 代码地址
+
+> https://github.com/mmxCoder/demo/tree/main/splitFile
