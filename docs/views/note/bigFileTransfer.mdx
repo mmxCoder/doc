@@ -2,6 +2,9 @@ import { Tag } from 'antd'
 import png1 from '../../assets/bigFile1.png'
 import png2 from '../../assets/bigFile2.png'
 import png3 from '../../assets/bigFile3.png'
+import png4 from '../../assets/splitFileDownload1.png'
+import png5 from '../../assets/splitFileDownload2.png'
+import png6 from '../../assets/splitFileDownload3.png'
 
 # 大文件传输
 
@@ -216,3 +219,152 @@ app.post("/merge", (req, res) => {
 ### 代码地址
 
 > https://github.com/mmxCoder/demo/tree/main/splitFile
+
+## 分片下载
+
+### 背景
+
+与上面的分片上传是类似的, 主要解决大文件传输时的时间问题
+
+### 实现流程
+
+#### 客户端
+
+<img src={png4} />
+
+#### 服务端
+
+<img src={png5} />
+
+### 代码实现
+
+#### 客户端
+
+```js {41}
+
+// 下载文件
+const saveAs = (name, buffers, mime = "application/octet-stream") => {
+    const blob = new Blob([buffers], { type: mime });
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.download = name
+    a.href = blobUrl;
+    a.click();
+    URL.revokeObjectURL(blob);
+}
+
+
+// ajax 为一个简单的请求函数, 可以在下面的源码地址中找到.
+ajax({
+    url: 'http://localhost:3001/getFileInfo?name=' + fileName,
+    success: (res) => {
+        // 获取到文件的大小
+        const size = res.data.size;
+        // 每次获取 x M 的大小 (x 这里是10, 可自行修改)
+        const chunk = 1024 * 1024 * 10;
+        // 开始字节
+        let start = 0;
+        // 结束字节
+        let end = 0;
+        // 保存结果
+        const result = []
+        // 这里循环保存下所有的字节区间, 用于发送给后端
+        while (end < size) {
+            start = end
+            end = Math.min(start + chunk, size)
+            result.push([start, end])
+        }
+        // 并发请求
+        Promise.all(result.map(item => {
+            return new Promise((resolve, reject) => {
+                ajax({
+                    url: `http://localhost:3001/getChunk?name=` + fileName,
+                    type: 'get',
+                    headers: {
+                        // 设置 Range 请求头, 这个是一个闭区间, 所以需要 -1, 才可以和后面一项连起来
+                        Range: `bytes=${item[0]}-${item[1] - 1}`,
+                    },
+                    success: (res) => {
+                        resolve(res)
+                    },
+                    error: (err) => {
+                        reject(err)
+                    },
+                    // responseType: 'blob' 用 blob 去接收. 方便后面的合并
+                    dataType: 'blob'
+                })
+            })
+        })).then(res => {
+            // 这里的 res 为 blob 的数组. [Blob, Blob, Blob, Blob, ...]
+            const blob = new Blob(res)
+            // 调用下载
+            saveAs(fileName, blob)
+        })
+
+
+    }
+})
+
+```
+
+#### 服务端
+
+```js
+
+// 获取文件大小接口(这里简单的使用文件名去获取, 生产环境可能是文件id, 根据实际情况决定)
+app.get("/getFileInfo", (req, res) => {
+  const info = fs.statSync(path.join(__dirname, `assets/${req.query.name}`));
+  res.setHeader("Content-Type", "application/json");
+  res.json({ message: "名称大小获取成功", data: { size: info.size } });
+});
+
+```
+
+```js
+
+// 获取分片文件接口
+app.get("/getChunk", (req, res) => {
+  // 文件名
+  const name = req.query.name;
+  // 文件路径
+  const paths = path.join(__dirname, "assets", name);
+  // 文件大小
+  const size = fs.statSync(path.join(__dirname, `assets`, req.query.name)).size;
+
+  // 这里拿到请求头中的 range 字段, 并截取出 开始字节 和 结束字节
+  const h = req.headers["range"];
+  const [start, end] = h.split("=")[1].split("-");
+
+  // 规范状态码和响应头.
+  res.writeHead(206, {
+    "Content-Range": `bytes ${start}-${end}/${size}`,
+    "Accept-Ranges": "bytes",
+    "Content-Length": end - start + 1,
+    "Content-Type": "application/octet-stream",
+  });
+
+  // 创建一个可读流并指定 开始字节 和 结束字节
+  fs.createReadStream(paths, {
+    start: Number(start),
+    end: Number(end),
+  }).pipe(res);
+});
+
+```
+
+:::tip MDN http状态 206
+
+**`HTTP 206 Partial Content`** 成功状态响应代码表示请求已成功，并且主体包含所请求的数据区间，该数据区间是在请求的 Range 首部指定的。  
+
+请参考: https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/206
+
+:::
+
+#### 效果展示
+
+:::tip 提示
+这里的测试结果是以一份 100M 的txt文本为下载内容, 并且选择了慢一点的网络: chrome -> network -> Fast 4G  
+因为本地太快了, 效果可能不是很明显
+:::
+
+<img src={ png6 } />
